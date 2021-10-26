@@ -1,13 +1,17 @@
-from flask_restful import Resource
+from flask_restful import Resource, abort
 from sqlalchemy.exc import IntegrityError
-from flask import jsonify, abort
+from flask import jsonify
 from ..alphavantage import get_latest_EOD_close
 from app import db
 from app.models.daily_eod import DailyEOD
 
 
 class DailyEODRoute(Resource):
+
     def get(self):
+        return jsonify([dailyeod.as_dict() for dailyeod in DailyEOD.query.all()]) 
+
+    def post(self):
         latest_EOD_close = get_latest_EOD_close()
         date = latest_EOD_close["date"]
         close = latest_EOD_close["close"]
@@ -16,9 +20,11 @@ class DailyEODRoute(Resource):
         try:
             db.session.commit()
         except IntegrityError as e:
-            print(e.__dict__)
             db.session.rollback()
-            abort(400, "This closing price for this day already exists in the db")
+            abort(400, message=f"This closing price for {date} already exists in the db")
+        else:
+            print(f"daily eod for {date} added to db")
+        return jsonify(daily_eod.as_dict())
+            
 
-
-        return jsonify(latest_EOD_close) 
+    

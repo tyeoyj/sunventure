@@ -9,7 +9,20 @@ app.config.from_object(Config)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-api = Api(app)
+
+errors = {
+    'UserAlreadyExistsError': {
+        'message': "A user with that username already exists.",
+        'status': 500,
+    },
+    'ResourceDoesNotExist': {
+        'message': "A resource with that ID no longer exists.",
+        'status': 410,
+        'extra': "Any extra information you want.",
+    },
+}
+
+api = Api(app, errors=errors)
 
 from app.routes import daily_eod as de, monthly_cpi as mc
 api.add_resource(de.DailyEODRoute, "/api/dailyeod")
